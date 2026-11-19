@@ -1,0 +1,136 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Réserver un rendez-vous – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ path('client_dashboard') }}">Mon Espace</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Prendre rendez-vous</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0"><i class="bi bi-calendar-plus text-primary me-2"></i> Prendre un rendez-vous (US08, US09)</h2>
+        </div>
+        <a href="{{ path('client_appointment_index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-calendar2-check me-1"></i> Mes rendez-vous
+        </a>
+    </div>
+
+    <!-- Sélecteur de service et de date -->
+    <div class="card card-shadow bg-white p-4 mb-4">
+        <form method="get" action="{{ path('client_appointment_slots') }}" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label for="selectService" class="form-label fw-bold">1. Choisir le service :</label>
+                <select name="service_id" id="selectService" class="form-select" onchange="this.form.submit()">
+                    {% for s in services %}
+                        <option value="{{ s.id }}" {{ selectedService and selectedService.id == s.id ? 'selected' : '' }}>
+                            {{ s.name }} ({{ s.code }}) – ~{{ s.estimatedDurationMinutes }} min
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="inputDate" class="form-label fw-bold">2. Choisir la date :</label>
+                <input type="date" name="date" id="inputDate" class="form-control" value="{{ selectedDate|date('Y-m-d') }}" min="{{ 'now'|date('Y-m-d') }}" onchange="this.form.submit()">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-1"></i> Créneaux
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Créneaux disponibles (US08) -->
+    <div class="card card-shadow bg-white p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1">
+                    Créneaux horaires du {{ selectedDate|date('d/m/Y') }}
+                </h4>
+                <p class="text-muted small mb-0">
+                    Service sélectionné : <strong>{{ selectedService ? selectedService.name : '—' }}</strong>
+                </p>
+            </div>
+            <div>
+                <span class="badge bg-light text-dark border p-2 small">
+                    <span class="text-success"><i class="bi bi-circle-fill me-1"></i> Disponible</span> &bull; 
+                    <span class="text-secondary"><i class="bi bi-slash-circle me-1"></i> Déjà réservé</span>
+                </span>
+            </div>
+        </div>
+
+        {% if slots|length > 0 %}
+            <div class="row g-3">
+                {% for slot in slots %}
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="card h-100 p-3 text-center border {{ slot.isAvailable ? 'border-success bg-white shadow-sm' : 'border-light bg-light text-muted' }}">
+                            <div class="fs-5 fw-bold mb-1 {{ slot.isAvailable ? 'text-dark' : 'text-secondary' }}">
+                                <i class="bi bi-clock me-1"></i> {{ slot.timeString }}
+                            </div>
+
+                            {% if slot.isAvailable %}
+                                <span class="badge bg-success-subtle text-success mb-2">Libre</span>
+                                <button type="button" class="btn btn-success btn-sm w-100 mt-auto" data-bs-toggle="modal" data-bs-target="#modalBook{{ loop.index }}">
+                                    <i class="bi bi-check-lg me-1"></i> Réserver
+                                </button>
+
+                                <!-- Modal Confirmation Réservation (US09) -->
+                                <div class="modal fade" id="modalBook{{ loop.index }}" tabindex="-1" aria-labelledby="modalLabel{{ loop.index }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content text-start">
+                                            <form method="post" action="{{ path('client_appointment_book') }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('book-appointment') }}">
+                                                <input type="hidden" name="service_id" value="{{ selectedService.id }}">
+                                                <input type="hidden" name="date" value="{{ selectedDate|date('Y-m-d') }}">
+                                                <input type="hidden" name="time" value="{{ slot.startTime|date('H:i') }}">
+
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title fw-bold" id="modalLabel{{ loop.index }}">Confirmer le rendez-vous</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="alert alert-light border mb-3">
+                                                        <div class="mb-1"><strong>Service :</strong> {{ selectedService.name }}</div>
+                                                        <div class="mb-1"><strong>Date :</strong> {{ selectedDate|date('d/m/Y') }}</div>
+                                                        <div><strong>Créneau horaire :</strong> <span class="badge bg-primary fs-6">{{ slot.timeString }}</span></div>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label small fw-semibold">Motif ou notes pour votre passage (optionnel) :</label>
+                                                        <textarea name="notes" class="form-control" rows="2" placeholder="Ex : Renouvellement de dossier..."></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="bi bi-calendar-check me-1"></i> Confirmer la réservation
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary mb-2">Complet</span>
+                                <button class="btn btn-outline-secondary btn-sm w-100 mt-auto" disabled>
+                                    Indisponible
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-warning text-center py-4">
+                <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+                <h5 class="fw-bold mb-1">Aucun créneau disponible pour cette date</h5>
+                <p class="small text-muted mb-0">Le service est fermé ou aucun horaire n'est configuré pour ce jour de la semaine. Veuillez choisir une autre date.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

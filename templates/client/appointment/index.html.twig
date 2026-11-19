@@ -1,0 +1,135 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes Rendez-vous – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ path('client_dashboard') }}">Mon Espace</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Rendez-vous</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0"><i class="bi bi-calendar2-check text-primary me-2"></i> Mes Rendez-vous (US10)</h2>
+        </div>
+        <a href="{{ path('client_appointment_slots') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Réserver un créneau
+        </a>
+    </div>
+
+    <!-- Rendez-vous à venir -->
+    <div class="card card-shadow bg-white mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+            <h5 class="fw-bold mb-0 text-success">
+                <i class="bi bi-clock-history me-2"></i> Rendez-vous à venir
+                <span class="badge bg-success ms-1">{{ upcomingAppointments|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Référence</th>
+                            <th>Service</th>
+                            <th>Date du rendez-vous</th>
+                            <th>Horaire</th>
+                            <th>Statut</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for apt in upcomingAppointments %}
+                            <tr>
+                                <td>
+                                    <span class="font-monospace fw-bold text-primary">{{ apt.appointmentReference }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">{{ apt.service.code }}</span>
+                                    {{ apt.service.name }}
+                                </td>
+                                <td class="fw-semibold">
+                                    <i class="bi bi-calendar-event me-1 text-primary"></i> {{ apt.appointmentDate|date('d/m/Y') }}
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary fs-6">
+                                        {{ apt.startTime|date('H:i') }} - {{ apt.endTime|date('H:i') }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ apt.statusBadgeClass }}">{{ apt.statusLabel }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ path('client_appointment_show', {id: apt.id}) }}" class="btn btn-outline-primary" title="Voir détails">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <form method="post" action="{{ path('client_appointment_cancel', {id: apt.id}) }}" class="d-inline" onsubmit="return confirm('Êtes-vous sûr(e) de vouloir annuler ce rendez-vous ? Le créneau sera libéré.');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('cancel-appointment-' ~ apt.id) }}">
+                                            <button type="submit" class="btn btn-outline-danger" title="Annuler le rendez-vous (US11)">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted p-4">
+                                    Vous n'avez aucun rendez-vous à venir.
+                                    <div class="mt-2">
+                                        <a href="{{ path('client_appointment_slots') }}" class="btn btn-sm btn-primary">Prendre un rendez-vous</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rendez-vous passés ou annulés -->
+    {% if pastAppointments|length > 0 %}
+        <div class="card card-shadow bg-white">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="fw-bold mb-0 text-secondary">
+                    <i class="bi bi-archive me-2"></i> Historique des rendez-vous passés ou annulés
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Référence</th>
+                                <th>Service</th>
+                                <th>Date</th>
+                                <th>Horaire</th>
+                                <th>Statut</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for apt in pastAppointments %}
+                                <tr>
+                                    <td class="font-monospace text-muted">{{ apt.appointmentReference }}</td>
+                                    <td>{{ apt.service.name }}</td>
+                                    <td>{{ apt.appointmentDate|date('d/m/Y') }}</td>
+                                    <td>{{ apt.startTime|date('H:i') }} - {{ apt.endTime|date('H:i') }}</td>
+                                    <td><span class="badge {{ apt.statusBadgeClass }}">{{ apt.statusLabel }}</span></td>
+                                    <td class="text-end">
+                                        <a href="{{ path('client_appointment_show', {id: apt.id}) }}" class="btn btn-sm btn-light border">Détails</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

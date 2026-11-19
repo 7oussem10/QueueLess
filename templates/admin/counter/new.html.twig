@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau guichet – Administration – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="mb-3">
+        <a href="{{ path('admin_counter_index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Retour aux guichets
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card card-shadow bg-white p-4">
+                <div class="border-bottom pb-3 mb-4">
+                    <h3 class="fw-bold mb-1"><i class="bi bi-plus-circle text-primary me-2"></i> Ajouter un guichet physique</h3>
+                    <p class="text-muted small mb-0">Configurez la dénomination, le code, l'affectation au service et à un agent</p>
+                </div>
+
+                {{ form_start(form) }}
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-8">
+                            {{ form_label(form.name, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
+                            {{ form_widget(form.name) }}
+                            {{ form_errors(form.name, {'attr': {'class': 'text-danger small mt-1 list-unstyled'}}) }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form_label(form.code, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
+                            {{ form_widget(form.code) }}
+                            {{ form_errors(form.code, {'attr': {'class': 'text-danger small mt-1 list-unstyled'}}) }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form_label(form.service, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
+                        {{ form_widget(form.service) }}
+                        {{ form_errors(form.service, {'attr': {'class': 'text-danger small mt-1 list-unstyled'}}) }}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form_label(form.currentAgent, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
+                        {{ form_widget(form.currentAgent) }}
+                        {{ form_errors(form.currentAgent, {'attr': {'class': 'text-danger small mt-1 list-unstyled'}}) }}
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check form-switch p-3 bg-light rounded">
+                            {{ form_widget(form.isActive) }}
+                            {{ form_label(form.isActive, null, {'label_attr': {'class': 'form-check-label fw-semibold ms-2'}}) }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between pt-3 border-top">
+                        <a href="{{ path('admin_counter_index') }}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-lg me-1"></i> Créer le guichet
+                        </button>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

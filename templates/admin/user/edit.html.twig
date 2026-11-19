@@ -1,0 +1,90 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier l'utilisateur – {{ user.fullName }} – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="mb-3">
+        <a href="{{ path('admin_user_index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Retour aux utilisateurs
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card card-shadow bg-white p-4">
+                <div class="border-bottom pb-3 mb-4">
+                    <h3 class="fw-bold mb-1"><i class="bi bi-person-gear text-primary me-2"></i> Modifier l'utilisateur</h3>
+                    <p class="text-muted small mb-0">Éditez les informations personnelles, gérez l'état du compte et modifiez les rôles attribués</p>
+                </div>
+
+                {{ form_start(form) }}
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            {{ form_label(form.firstName, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
+                            {{ form_widget(form.firstName) }}
+                            {{ form_errors(form.firstName, {'attr': {'class': 'text-danger small mt-1 list-unstyled'}}) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form_label(form.lastName, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
+                            {{ form_widget(form.lastName) }}
+                            {{ form_errors(form.lastName, {'attr': {'class': 'text-danger small mt-1 list-unstyled'}}) }}
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            {{ form_label(form.email, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
+                            {{ form_widget(form.email) }}
+                            {{ form_errors(form.email, {'attr': {'class': 'text-danger small mt-1 list-unstyled'}}) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form_label(form.phoneNumber, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
+                            {{ form_widget(form.phoneNumber) }}
+                            {{ form_errors(form.phoneNumber, {'attr': {'class': 'text-danger small mt-1 list-unstyled'}}) }}
+                        </div>
+                    </div>
+
+                    <div class="card bg-light p-3 mb-3 border-0">
+                        <div class="fw-bold mb-2"><i class="bi bi-shield-check text-primary me-1"></i> Attribution des rôles (US25)</div>
+                        <div class="d-flex flex-wrap gap-4">
+                            {% for child in form.roles %}
+                                <div class="form-check">
+                                    {{ form_widget(child, {'attr': {'class': 'form-check-input'}}) }}
+                                    {{ form_label(child, null, {'label_attr': {'class': 'form-check-label fw-semibold'}}) }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {{ form_errors(form.roles, {'attr': {'class': 'text-danger small mt-1 list-unstyled'}}) }}
+                        <small class="text-muted mt-2 d-block">
+                            Cochez un ou plusieurs rôles : <strong>Client</strong> (accès usager), <strong>Agent</strong> (traitement des tickets), <strong>Administrateur</strong> (gestion intégrale du système).
+                        </small>
+                    </div>
+
+                    <div class="mb-3 form-check form-switch p-3 bg-light rounded ms-0">
+                        <div class="ms-4">
+                            {{ form_widget(form.isActive) }}
+                            {{ form_label(form.isActive, null, {'label_attr': {'class': 'form-check-label fw-bold'}}) }}
+                            <div class="form-text small">Un compte inactif ne peut plus se connecter à l'application.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form_label(form.newPassword, null, {'label_attr': {'class': 'form-label fw-semibold'}}) }}
+                        {{ form_widget(form.newPassword) }}
+                        {{ form_errors(form.newPassword, {'attr': {'class': 'text-danger small mt-1 list-unstyled'}}) }}
+                        <div class="form-text small">Laissez ce champ vide si vous ne souhaitez pas réinitialiser le mot de passe de l'utilisateur.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between pt-3 border-top">
+                        <a href="{{ path('admin_user_index') }}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-lg me-1"></i> Enregistrer les modifications
+                        </button>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

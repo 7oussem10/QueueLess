@@ -1,0 +1,83 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Horaires des services – Administration – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Administration</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Horaires des services</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0"><i class="bi bi-clock-history text-primary me-2"></i> Configuration des horaires de service (US28)</h2>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% for item in schedulesByService %}
+            {% set service = item.service %}
+            {% set schedules = item.schedules %}
+            <div class="col-lg-6">
+                <div class="card card-shadow bg-white h-100">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-primary me-2">{{ service.code }}</span>
+                            <strong class="fs-5">{{ service.name }}</strong>
+                        </div>
+                        <a href="{{ path('admin_schedule_by_service', {id: service.id}) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-gear me-1"></i> Configurer la semaine
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Jour</th>
+                                        <th>Plage horaire</th>
+                                        <th>Durée créneau</th>
+                                        <th>État</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sched in schedules %}
+                                        <tr>
+                                            <td class="fw-semibold">{{ sched.dayName }}</td>
+                                            <td>
+                                                {% if sched.isActive %}
+                                                    {{ sched.openingTime|date('H:i') }} - {{ sched.closingTime|date('H:i') }}
+                                                {% else %}
+                                                    <span class="text-muted">Fermé</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ sched.slotDurationMinutes }} min</td>
+                                            <td>
+                                                {% if sched.isActive %}
+                                                    <span class="badge bg-success-subtle text-success">Ouvert</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary-subtle text-secondary">Fermé</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{{ path('admin_schedule_edit', {id: sched.id}) }}" class="btn btn-sm btn-light border text-primary">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="5" class="text-center text-muted p-3">Aucun horaire configuré</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

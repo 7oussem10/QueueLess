@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails utilisateur – {{ user.fullName }} – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="mb-3">
+        <a href="{{ path('admin_user_index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Retour aux utilisateurs
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card card-shadow bg-white p-4">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; font-size: 1.4rem;">
+                            {{ user.firstName|first|upper }}{{ user.lastName|first|upper }}
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">{{ user.fullName }}</h3>
+                            <p class="text-muted mb-0"><code>{{ user.email }}</code></p>
+                        </div>
+                    </div>
+                    <div>
+                        {% if user.isActive %}
+                            <span class="badge bg-success fs-6 px-3 py-2"><i class="bi bi-check-circle me-1"></i> Compte Actif</span>
+                        {% else %}
+                            <span class="badge bg-danger fs-6 px-3 py-2"><i class="bi bi-x-circle me-1"></i> Compte Désactivé</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded">
+                            <span class="text-muted small d-block">Prénom</span>
+                            <span class="fw-semibold">{{ user.firstName }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded">
+                            <span class="text-muted small d-block">Nom</span>
+                            <span class="fw-semibold">{{ user.lastName }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded">
+                            <span class="text-muted small d-block">Téléphone</span>
+                            <span class="fw-semibold">{{ user.phoneNumber|default('Non renseigné') }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded">
+                            <span class="text-muted small d-block">Date d'inscription</span>
+                            <span class="fw-semibold">{{ user.createdAt|date('d/m/Y à H:i:s') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="fw-bold mb-3"><i class="bi bi-shield-check text-primary me-2"></i> Rôles attribués dans le système</h5>
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    {% for role in user.roles %}
+                        {% if role == 'ROLE_ADMIN' %}
+                            <span class="badge badge-role-admin p-2 fs-6"><i class="bi bi-shield-shaded me-1"></i> Administrateur</span>
+                        {% elseif role == 'ROLE_AGENT' %}
+                            <span class="badge badge-role-agent p-2 fs-6"><i class="bi bi-headset me-1"></i> Agent de guichet</span>
+                        {% elseif role == 'ROLE_CLIENT' %}
+                            <span class="badge badge-role-client p-2 fs-6"><i class="bi bi-person me-1"></i> Client / Usager</span>
+                        {% else %}
+                            <span class="badge bg-secondary p-2 fs-6">{{ role }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <a href="{{ path('admin_user_edit', {id: user.id}) }}" class="btn btn-primary">
+                        <i class="bi bi-pencil-square me-1"></i> Modifier les informations ou les rôles
+                    </a>
+
+                    {% if not (app.user and app.user.id == user.id) %}
+                        <form method="post" action="{{ path('admin_user_toggle_active', {id: user.id}) }}" onsubmit="return confirm('Voulez-vous vraiment changer l\'état de ce compte ?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('toggle-active-' ~ user.id) }}">
+                            <button type="submit" class="btn btn-outline-{{ user.isActive ? 'danger' : 'success' }}">
+                                <i class="bi bi-power me-1"></i> {{ user.isActive ? 'Désactiver le compte' : 'Activer le compte' }}
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

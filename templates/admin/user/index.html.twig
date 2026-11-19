@@ -1,0 +1,146 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des utilisateurs – Administration – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Administration</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Utilisateurs</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i> Gestion des comptes utilisateurs</h2>
+        </div>
+    </div>
+
+    <!-- Filtres & Recherche -->
+    <div class="card card-shadow bg-white p-3 mb-4">
+        <form method="get" action="{{ path('admin_user_index') }}" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Rechercher par nom, prénom, email ou tél...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select name="role" class="form-select">
+                    <option value="">-- Tous les rôles --</option>
+                    <option value="ROLE_CLIENT" {{ roleFilter == 'ROLE_CLIENT' ? 'selected' : '' }}>Clients</option>
+                    <option value="ROLE_AGENT" {{ roleFilter == 'ROLE_AGENT' ? 'selected' : '' }}>Agents</option>
+                    <option value="ROLE_ADMIN" {{ roleFilter == 'ROLE_ADMIN' ? 'selected' : '' }}>Administrateurs</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Filtrer
+                </button>
+                {% if search or roleFilter %}
+                    <a href="{{ path('admin_user_index') }}" class="btn btn-outline-secondary" title="Réinitialiser">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Liste des utilisateurs -->
+    <div class="card card-shadow bg-white">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Comptes enregistrés <span class="badge bg-secondary ms-1">{{ users|length }}</span></h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Utilisateur</th>
+                            <th>Email</th>
+                            <th>Téléphone</th>
+                            <th>Rôles attribués</th>
+                            <th>Statut</th>
+                            <th>Inscrit le</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-circle bg-light border text-primary fw-bold d-flex align-items-center justify-content-center" style="width: 34px; height: 34px; font-size: 0.8rem;">
+                                            {{ user.firstName|first|upper }}{{ user.lastName|first|upper }}
+                                        </div>
+                                        <div>
+                                            <a href="{{ path('admin_user_show', {id: user.id}) }}" class="fw-bold text-dark text-decoration-none">
+                                                {{ user.fullName }}
+                                            </a>
+                                            {% if app.user and app.user.id == user.id %}
+                                                <span class="badge bg-light text-primary border ms-1">Vous</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><code>{{ user.email }}</code></td>
+                                <td>{{ user.phoneNumber|default('—') }}</td>
+                                <td>
+                                    {% for role in user.roles %}
+                                        {% if role == 'ROLE_ADMIN' %}
+                                            <span class="badge badge-role-admin">Admin</span>
+                                        {% elseif role == 'ROLE_AGENT' %}
+                                            <span class="badge badge-role-agent">Agent</span>
+                                        {% elseif role == 'ROLE_CLIENT' %}
+                                            <span class="badge badge-role-client">Client</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% if user.isActive %}
+                                        <span class="badge bg-success-subtle text-success">
+                                            <i class="bi bi-check-circle me-1"></i> Actif
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger">
+                                            <i class="bi bi-dash-circle me-1"></i> Suspendu
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">{{ user.createdAt|date('d/m/Y') }}</td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ path('admin_user_show', {id: user.id}) }}" class="btn btn-outline-secondary" title="Consulter la fiche">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ path('admin_user_edit', {id: user.id}) }}" class="btn btn-outline-primary" title="Modifier & Rôles">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                        {% if not (app.user and app.user.id == user.id) %}
+                                            <form method="post" action="{{ path('admin_user_toggle_active', {id: user.id}) }}" class="d-inline" onsubmit="return confirm('Confirmer le changement de statut de ce compte ?');">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('toggle-active-' ~ user.id) }}">
+                                                <button type="submit" class="btn btn-outline-{{ user.isActive ? 'warning' : 'success' }}" title="{{ user.isActive ? 'Désactiver le compte' : 'Activer le compte' }}">
+                                                    <i class="bi bi-power"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted p-4">
+                                    <i class="bi bi-search fs-3 d-block mb-2"></i>
+                                    Aucun utilisateur ne correspond aux critères de recherche.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

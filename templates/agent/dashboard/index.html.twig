@@ -1,0 +1,253 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Poste Agent – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <span class="badge bg-primary-subtle text-primary px-3 py-1 rounded-pill mb-1">
+                <i class="bi bi-headset me-1"></i> Console Agent de Guichet
+            </span>
+            <h2 class="fw-bold mb-0">Poste Agent : {{ agent.fullName }}</h2>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ path('agent_tickets_pending') }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-list-ol me-1"></i> File complète des tickets (US15)
+            </a>
+            <a href="{{ path('agent_appointments_today') }}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-calendar-day me-1"></i> Rendez-vous du jour (US21)
+            </a>
+        </div>
+    </div>
+
+    <!-- Guichet Selection / Status -->
+    <div class="card card-shadow bg-white p-3 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle {{ assignedCounter ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning' }} p-3">
+                    <i class="bi bi-display fs-3"></i>
+                </div>
+                <div>
+                    {% if assignedCounter %}
+                        <div class="small text-muted text-uppercase fw-bold">Guichet assigné actuel</div>
+                        <h4 class="fw-bold text-dark mb-0">
+                            {{ assignedCounter.name }} <span class="badge bg-dark font-monospace fs-6">{{ assignedCounter.code }}</span>
+                        </h4>
+                        <span class="small text-muted">
+                            Service assigné : <strong>{{ assignedCounter.service ? assignedCounter.service.name : 'Tous services' }}</strong>
+                        </span>
+                    {% else %}
+                        <h5 class="fw-bold text-warning mb-0">Aucun guichet pris en charge</h5>
+                        <p class="small text-muted mb-0">Veuillez sélectionner un guichet disponible pour commencer à traiter les usagers.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                {% if assignedCounter %}
+                    <form method="post" action="{{ path('agent_assign_counter') }}" class="d-inline" onsubmit="return confirm('Libérer ce guichet ?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('agent-assign-counter') }}">
+                        <input type="hidden" name="counter_id" value="">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-box-arrow-left me-1"></i> Quitter ce guichet
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="post" action="{{ path('agent_assign_counter') }}" class="d-flex gap-2">
+                        <input type="hidden" name="_token" value="{{ csrf_token('agent-assign-counter') }}">
+                        <select name="counter_id" class="form-select form-select-sm" required style="min-width: 250px;">
+                            <option value="">-- Choisir un guichet --</option>
+                            {% for c in allActiveCounters %}
+                                <option value="{{ c.id }}">
+                                    {{ c.name }} ({{ c.code }}) - {{ c.service ? c.service.name : 'Général' }}
+                                    {{ c.currentAgent ? ' [En poste: ' ~ c.currentAgent.fullName ~ ']' : '' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm text-nowrap">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Prendre le guichet
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Colonne 1 : Appel & Traitement du ticket actif -->
+        <div class="col-lg-7">
+            <div class="card card-shadow bg-white h-100">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-person-badge text-primary me-2"></i> Usager en cours au guichet
+                    </h5>
+                    {% if activeTicket %}
+                        <span class="badge {{ activeTicket.statusBadgeClass }} fs-6">{{ activeTicket.statusLabel }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="card-body p-4">
+                    {% if activeTicket %}
+                        <div class="p-3 bg-light rounded text-center mb-4 border">
+                            <span class="text-muted small d-block">NUMÉRO DU TICKET ACTUEL</span>
+                            <h1 class="display-3 fw-bolder text-primary font-monospace my-1">{{ activeTicket.ticketNumber }}</h1>
+                            <div class="fs-5 fw-bold text-dark">{{ activeTicket.client.fullName }}</div>
+                            <div class="text-muted small">
+                                <code>{{ activeTicket.client.email }}</code> &bull; {{ activeTicket.client.phoneNumber|default('Tél non renseigné') }}
+                            </div>
+                        </div>
+
+                        <!-- Actions selon l'état -->
+                        {% if activeTicket.status == 'called' %}
+                            <div class="alert alert-warning text-center mb-4">
+                                <i class="bi bi-megaphone-fill me-2 fs-5"></i>
+                                <strong>Ticket appelé !</strong> Le client est invité à se présenter au guichet.
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-7">
+                                    <form method="post" action="{{ path('agent_ticket_start', {id: activeTicket.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('ticket-start-' ~ activeTicket.id) }}">
+                                        <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm">
+                                            <i class="bi bi-play-circle-fill me-2"></i> Commencer le traitement (US18)
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="col-md-5">
+                                    <form method="post" action="{{ path('agent_ticket_mark_absent', {id: activeTicket.id}) }}" onsubmit="return confirm('Marquer le client comme absent ?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('ticket-absent-' ~ activeTicket.id) }}">
+                                        <button type="submit" class="btn btn-outline-danger btn-lg w-100">
+                                            <i class="bi bi-person-x me-1"></i> Client absent (US20)
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                        {% elseif activeTicket.status == 'in_progress' %}
+                            <div class="alert alert-primary mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-stopwatch text-primary fs-5 me-2"></i>
+                                        <strong>Traitement en cours...</strong>
+                                    </div>
+                                    <small class="text-muted">Débuté à {{ activeTicket.startedAt ? activeTicket.startedAt|date('H:i:s') : '—' }}</small>
+                                </div>
+                            </div>
+
+                            <form method="post" action="{{ path('agent_ticket_finish', {id: activeTicket.id}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('ticket-finish-' ~ activeTicket.id) }}">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">Notes / Compte-rendu du passage (optionnel) :</label>
+                                    <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Ex : Dossier validé, carte délivrée..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm">
+                                    <i class="bi bi-check2-circle me-2"></i> Terminer le traitement (US19)
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        <div class="mt-3 text-center">
+                            <a href="{{ path('agent_ticket_show', {id: activeTicket.id}) }}" class="small text-muted text-decoration-none">
+                                <i class="bi bi-info-circle me-1"></i> Consulter la fiche complète du ticket (US17)
+                            </a>
+                        </div>
+
+                    {% else %}
+                        <!-- Aucun ticket actif : bouton Appeler le ticket suivant (US16) -->
+                        <div class="text-center py-4">
+                            <div class="rounded-circle bg-light border p-4 d-inline-flex mb-3">
+                                <i class="bi bi-megaphone fs-1 text-primary"></i>
+                            </div>
+                            <h4 class="fw-bold mb-2">Guichet disponible</h4>
+                            <p class="text-muted small mb-4">
+                                {% if assignedCounter and assignedCounter.service %}
+                                    File dédiée au service : <strong>{{ assignedCounter.service.name }}</strong>
+                                {% else %}
+                                    Prêt pour traiter le prochain usager en attente.
+                                {% endif %}
+                            </p>
+
+                            {% if assignedCounter %}
+                                <form method="post" action="{{ path('agent_ticket_call_next') }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('call-next-ticket') }}">
+                                    {% if assignedCounter.service %}
+                                        <input type="hidden" name="service_id" value="{{ assignedCounter.service.id }}">
+                                    {% endif %}
+                                    <button type="submit" class="btn btn-primary btn-lg px-5 py-3 shadow">
+                                        <i class="bi bi-megaphone-fill me-2 fs-5"></i> Appeler le ticket suivant (US16)
+                                    </button>
+                                </form>
+                            {% else %}
+                                <div class="alert alert-info small d-inline-block">
+                                    Veuillez d'abord prendre un guichet ci-dessus pour activer l'appel des tickets.
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne 2 : File d'attente en temps réel (US15) -->
+        <div class="col-lg-5">
+            <div class="card card-shadow bg-white h-100">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-people-fill text-warning me-2"></i> File d'attente (US15)
+                    </h5>
+                    <span class="badge bg-secondary">{{ pendingTickets|length }} en attente</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light small sticky-top">
+                                <tr>
+                                    <th>Rang</th>
+                                    <th>Ticket</th>
+                                    <th>Usager</th>
+                                    <th>Attente</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in pendingTickets %}
+                                    <tr class="{{ loop.first ? 'table-warning fw-bold' : '' }}">
+                                        <td>
+                                            {% if loop.first %}
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-arrow-right-short"></i> Prochain</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-dark border">#{{ loop.index }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="font-monospace text-primary">{{ ticket.ticketNumber }}</span>
+                                        </td>
+                                        <td class="small">
+                                            {{ ticket.client.fullName }}
+                                        </td>
+                                        <td class="small text-muted">
+                                            {{ ticket.createdAt|date('H:i') }}
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted p-4">
+                                            <i class="bi bi-check2-all fs-3 text-success d-block mb-1"></i>
+                                            Aucun usager en attente pour le moment.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light p-2 text-center small">
+                    <a href="{{ path('agent_tickets_pending') }}" class="text-decoration-none">
+                        Voir la file détaillée de tous les services &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

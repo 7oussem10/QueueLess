@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Obtenir un ticket – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="mb-3">
+        <a href="{{ path('client_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Retour à mon espace
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card card-shadow bg-white p-4">
+                <div class="text-center mb-4 pb-2 border-bottom">
+                    <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex p-3 mb-2">
+                        <i class="bi bi-ticket-perforated-fill fs-1"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Prendre un ticket de file d'attente (US04)</h3>
+                    <p class="text-muted small">Sélectionnez le service souhaité pour obtenir immédiatement votre numéro de passage.</p>
+                </div>
+
+                <form method="post" action="{{ path('client_ticket_request') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('request-ticket') }}">
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Sélectionnez votre prestation :</label>
+                        <div class="row g-3">
+                            {% for service in services %}
+                                <div class="col-md-6">
+                                    <div class="card h-100 border p-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="service_id" id="service_{{ service.id }}" value="{{ service.id }}" required {{ loop.first ? 'checked' : '' }}>
+                                            <label class="form-check-label w-100" for="service_{{ service.id }}">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="badge bg-primary">{{ service.code }}</span>
+                                                    <small class="text-muted"><i class="bi bi-clock me-1"></i> ~{{ service.estimatedDurationMinutes }} min</small>
+                                                </div>
+                                                <h6 class="fw-bold mb-1 text-dark">{{ service.name }}</h6>
+                                                <p class="small text-secondary mb-0">{{ service.description|default('—') }}</p>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="col-12">
+                                    <div class="alert alert-warning">Aucun service n'est disponible pour le moment.</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm" {{ services|length == 0 ? 'disabled' : '' }}>
+                            <i class="bi bi-ticket-perforated me-2"></i> Valider et obtenir mon ticket
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

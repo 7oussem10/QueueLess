@@ -1,0 +1,108 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des guichets – Administration – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a href="{{ path('admin_dashboard') }}">Administration</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Guichets</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-0"><i class="bi bi-display text-primary me-2"></i> Gestion des guichets (US27)</h2>
+        </div>
+        <a href="{{ path('admin_counter_new') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> Créer un nouveau guichet
+        </a>
+    </div>
+
+    <div class="card card-shadow bg-white">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Guichets physiques enregistrés <span class="badge bg-secondary ms-1">{{ counters|length }}</span></h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Nom du guichet</th>
+                            <th>Service assigné</th>
+                            <th>Agent affecté</th>
+                            <th>Statut opérationnel</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for counter in counters %}
+                            <tr>
+                                <td><span class="badge bg-dark fs-6">{{ counter.code }}</span></td>
+                                <td class="fw-bold text-dark">{{ counter.name }}</td>
+                                <td>
+                                    {% if counter.service %}
+                                        <span class="badge bg-primary-subtle text-primary">
+                                            <i class="bi bi-layers me-1"></i> {{ counter.service.name }} ({{ counter.service.code }})
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small fst-italic">Non rattaché</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if counter.currentAgent %}
+                                        <span class="badge bg-info-subtle text-info">
+                                            <i class="bi bi-person-check me-1"></i> {{ counter.currentAgent.fullName }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-light text-muted border">
+                                            Aucun agent
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if counter.isActive %}
+                                        <span class="badge bg-success-subtle text-success">
+                                            <i class="bi bi-check-circle me-1"></i> Opérationnel
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger-subtle text-danger">
+                                            <i class="bi bi-pause-circle me-1"></i> Hors-service
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ path('admin_counter_edit', {id: counter.id}) }}" class="btn btn-outline-primary" title="Modifier">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                        <form method="post" action="{{ path('admin_counter_toggle_active', {id: counter.id}) }}" class="d-inline" onsubmit="return confirm('Basculer le statut opérationnel de ce guichet ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('toggle-active-counter-' ~ counter.id) }}">
+                                            <button type="submit" class="btn btn-outline-{{ counter.isActive ? 'warning' : 'success' }}" title="{{ counter.isActive ? 'Mettre hors-service' : 'Activer' }}">
+                                                <i class="bi bi-power"></i>
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{{ path('admin_counter_delete', {id: counter.id}) }}" class="d-inline" onsubmit="return confirm('Confirmer la suppression de ce guichet ?');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete-counter-' ~ counter.id) }}">
+                                            <button type="submit" class="btn btn-outline-danger" title="Supprimer">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted p-4">
+                                    Aucun guichet n'est encore configuré.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

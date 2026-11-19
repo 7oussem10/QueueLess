@@ -1,0 +1,61 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Horaires de {{ service.name }} – Administration – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <div class="mb-3">
+        <a href="{{ path('admin_schedule_index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Retour aux horaires
+        </a>
+    </div>
+
+    <div class="card card-shadow bg-white p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <span class="badge bg-primary fs-6 mb-1">{{ service.code }}</span>
+                <h3 class="fw-bold mb-0">Horaires hebdomadaires : {{ service.name }} (US28)</h3>
+            </div>
+        </div>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Jour de la semaine</th>
+                        <th>Heure d'ouverture</th>
+                        <th>Heure de fermeture</th>
+                        <th>Durée d'un créneau</th>
+                        <th>Statut</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sched in schedules %}
+                        <tr>
+                            <td class="fw-bold fs-6">{{ sched.dayName }}</td>
+                            <td>{{ sched.openingTime|date('H:i') }}</td>
+                            <td>{{ sched.closingTime|date('H:i') }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ sched.slotDurationMinutes }} minutes</span></td>
+                            <td>
+                                {% if sched.isActive %}
+                                    <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle me-1"></i> Ouvert</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary"><i class="bi bi-x-circle me-1"></i> Fermé</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ path('admin_schedule_edit', {id: sched.id}) }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-pencil-square me-1"></i> Modifier
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="6" class="text-center text-muted p-4">Aucun horaire défini</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon Espace Client – QueueLess{% endblock %}
+
+{% block body %}
+<div class="py-3">
+    <!-- Welcome Header -->
+    <div class="card card-shadow bg-primary text-white p-4 mb-4 border-0">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <span class="badge bg-white text-primary mb-2 px-3 py-1 rounded-pill">
+                    <i class="bi bi-person-check-fill me-1"></i> Espace Usager
+                </span>
+                <h2 class="fw-bold mb-1">Bienvenue, {{ client.fullName }} !</h2>
+                <p class="mb-0 text-white-50">Accédez aux services, prenez vos tickets et suivez votre position en temps réel.</p>
+            </div>
+            <div class="text-md-end">
+                <a href="{{ path('client_ticket_request') }}" class="btn btn-warning btn-lg fw-bold shadow-sm">
+                    <i class="bi bi-ticket-perforated me-2"></i> Prendre un ticket
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Tickets Alerts (Sprint 2 Live Tracking) -->
+    {% if activeTickets|length > 0 %}
+        <div class="mb-4">
+            <h4 class="fw-bold mb-3"><i class="bi bi-broadcast text-danger me-2"></i> Mes tickets en cours de traitement / file active</h4>
+            <div class="row g-3">
+                {% for item in activeTickets %}
+                    {% set t = item.ticket %}
+                    <div class="col-lg-6">
+                        <div class="card card-shadow bg-white border-start border-5 {{ t.status == 'called' ? 'border-warning bg-warning-subtle' : 'border-primary' }} p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="badge bg-primary me-1">{{ t.service.code }}</span>
+                                    <span class="fw-bold text-dark">{{ t.service.name }}</span>
+                                </div>
+                                <span class="badge {{ t.statusBadgeClass }} fs-6">{{ t.statusLabel }}</span>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between my-2 py-2 border-top border-bottom">
+                                <div>
+                                    <span class="text-muted small d-block">Numéro de ticket :</span>
+                                    <span class="fs-3 fw-bold font-monospace text-primary">{{ t.ticketNumber }}</span>
+                                </div>
+                                <div class="text-end">
+                                    {% if t.status == 'waiting' %}
+                                        <span class="text-muted small d-block">Rang dans la file :</span>
+                                        <span class="fs-4 fw-bold text-dark">{{ item.position }}<small class="fs-6 fw-normal text-muted"> ({{ item.peopleAhead }} devant)</small></span>
+                                    {% elseif t.status == 'called' %}
+                                        <span class="badge bg-warning text-dark fs-6 animate-pulse">
+                                            <i class="bi bi-megaphone-fill me-1"></i> Présentez-vous au {{ t.counter ? t.counter.name : 'guichet' }} !
+                                        </span>
+                                    {% elseif t.status == 'in_progress' %}
+                                        <span class="badge bg-primary fs-6">
+                                            <i class="bi bi-gear-fill me-1"></i> En cours au {{ t.counter ? t.counter.name : 'guichet' }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mt-2 small">
+                                <span class="text-muted">
+                                    <i class="bi bi-clock me-1"></i> Émis le {{ t.createdAt|date('d/m/Y à H:i') }}
+                                </span>
+                                <a href="{{ path('client_ticket_show', {id: t.id}) }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-eye me-1"></i> Voir le ticket complet
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Actions rapides -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card card-shadow h-100 bg-white p-3 text-center border-top border-4 border-primary">
+                <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex p-3 mx-auto mb-3">
+                    <i class="bi bi-grid-fill fs-2"></i>
+                </div>
+                <h5 class="fw-bold">Consulter les services (US01)</h5>
+                <p class="text-muted small">Explorez la liste des prestations offertes, les durées et la disponibilité des guichets.</p>
+                <a href="{{ path('app_services_list') }}" class="btn btn-outline-primary btn-sm mt-auto">
+                    Voir les prestations <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-shadow h-100 bg-white p-3 text-center border-top border-4 border-success">
+                <div class="rounded-circle bg-success-subtle text-success d-inline-flex p-3 mx-auto mb-3">
+                    <i class="bi bi-ticket-perforated-fill fs-2"></i>
+                </div>
+                <h5 class="fw-bold">Obtenir un ticket (US04)</h5>
+                <p class="text-muted small">Prenez un ticket virtuel pour entrer dans la file d'attente d'un service de votre choix.</p>
+                <div class="mt-auto d-flex gap-2 justify-content-center">
+                    <a href="{{ path('client_ticket_request') }}" class="btn btn-success btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i> Nouveau ticket
+                    </a>
+                    <a href="{{ path('client_ticket_list') }}" class="btn btn-outline-secondary btn-sm">
+                        Historique
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card card-shadow h-100 bg-white p-3 text-center border-top border-4 border-warning">
+                <div class="rounded-circle bg-warning-subtle text-warning d-inline-flex p-3 mx-auto mb-3">
+                    <i class="bi bi-calendar2-check-fill fs-2"></i>
+                </div>
+                <h5 class="fw-bold">Mes Rendez-vous (US08–US11)</h5>
+                <p class="text-muted small">Réservez un créneau horaire dédié auprès de nos services sans attendre dans la file.</p>
+                <div class="mt-auto d-flex gap-2 justify-content-center">
+                    <a href="{{ path('client_appointment_slots') }}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-calendar-plus me-1"></i> Prendre RDV
+                    </a>
+                    <a href="{{ path('client_appointment_index') }}" class="btn btn-outline-secondary btn-sm">
+                        Mes RDV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique récent -->
+    {% if pastTickets|length > 0 %}
+        <div class="card card-shadow bg-white p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-secondary me-2"></i> Mes derniers tickets terminés</h5>
+                <a href="{{ path('client_ticket_list') }}" class="small text-decoration-none">Voir tout l'historique &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th>Numéro</th>
+                            <th>Service</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in pastTickets %}
+                            <tr>
+                                <td class="font-monospace fw-bold">{{ t.ticketNumber }}</td>
+                                <td>{{ t.service.name }}</td>
+                                <td class="small text-muted">{{ t.createdAt|date('d/m/Y H:i') }}</td>
+                                <td><span class="badge {{ t.statusBadgeClass }}">{{ t.statusLabel }}</span></td>
+                                <td class="text-end">
+                                    <a href="{{ path('client_ticket_show', {id: t.id}) }}" class="btn btn-sm btn-light border">Détails</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
